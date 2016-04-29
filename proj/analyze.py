@@ -8,6 +8,9 @@ Before analyzing you have to clean the data
 # import regex
 import re
 
+# import nltk
+import nltk
+
 from proj.celery import app
 
 import pycassa
