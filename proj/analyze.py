@@ -18,12 +18,15 @@ from proj.celery import app
 
 import pycassa
 
+# ininialize Cassandra connection pool
+
+pool = pycassa.ConnectionPool('tweets') # we can then use this connection pool to connect to Cassandra
+
 domain_recongition_classifier = None
 issue_recognition_classifier = None
 
 domain_feature_list = []
 issue_feature_list = []
-
 
 def cleanTweet(tweet_text):
     # Convert to lower case
@@ -65,11 +68,17 @@ def getFeaturevector(tweet_text):
 def domainExtractFeatures(feature_vector):
     tweet_words = set(feature_vector)  # remove duplicate vectors from tweet
     features = {}
+    # print 'showing domain list:'
+    # print domain_feature_list
     for word in domain_feature_list:
         domain = None
+        # print 'searh for word below in domain list:'
+        # print word[0]
         if word[0] in tweet_words:
+            # print 'word found'
             domain = word[1]  # if keyword is mentioned in tweet words, add it to as a mentioned category
         else:
+            # print 'word not found'
             domain = 'toanalyze' # if it wasn't mentioned then, we put it in the undefined category
         features['domain mention (%s)' % word[0]] = domain # find out if the set contains the words in the domain feature list
     return features
@@ -89,11 +98,6 @@ def getDomainRecognitionList():
         if row[1] is not None:
             if row[1] != "":
                 domain_list.append((row[1],'water'))
-        """
-        colnum = 0
-        for col in row:
-            domain_list.append((row[colnum], 'electricity'))
-        """
     print 'Domain list:'
     print domain_list
     return domain_list
@@ -138,7 +142,12 @@ def analyzeTweet(tweet):
     print 'Showing classifier output:'
     classify_result = domain_recongition_classifier.classify(domainExtractFeatures(feature_vector=feature_vector))
     print classify_result
-
+    if classify_result == "toanalyze":
+        cf_analyzedtweets_toanalyze = pycassa.ColumnFamily(pool, 'analyzedtweets_toanalyze')
+        cf_analyzedtweets_toanalyze.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
+    else:
+        cf_analyzedtweets_tweetcategory = pycassa.ColumnFamily(pool, 'analyzedtweets_tweetcategory')
+        cf_analyzedtweets_tweetcategory.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
 
     # finds out whether this is a water or electricty issue
 def issueCategorization():
