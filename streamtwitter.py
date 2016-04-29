@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Here is where we connect to twitter
 Twitter credentials are set up in environment variables, for extra security and convenience
@@ -6,8 +8,7 @@ Twitter credentials are set up in environment variables, for extra security and 
 import os
 import json
 
-# import twitter library for streaming
-from twitter import Twitter, OAuth, TwitterHTTPError, TwitterStream
+from twitter import OAuth, TwitterHTTPError, TwitterStream
 
 # get auth credentials from environment variables
 CONSUMER_KEY = os.environ.get('TWITTER_API_KEY')
@@ -21,9 +22,9 @@ oauth = OAuth(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
 twitter_stream = TwitterStream(auth=oauth, block=False)
 
 # twitter_stream creates an iterator that we can use to read tweets from the stream
-iterator = twitter_stream.statuses.filter(track="#testtaghash")
-
+iterator = twitter_stream.statuses.filter(track="#fixMtaa")
 
 # read all tweets in the iterator
 for tweet in iterator:
-    print tweet
+    if tweet is not None:
+        print tweet
