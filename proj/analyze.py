@@ -8,8 +8,6 @@ Before analyzing you have to clean the data
 # import regex
 import re
 
-
-
 from proj.celery import app
 
 import pycassa
@@ -18,10 +16,10 @@ import pycassa
 def analyzeTweet(tweet):
     print 'about to analyze tweet'
     cleaned_tweet_text = cleanTweet(tweet_text=tweet['text'])
-
+    feature_vector = getFeaturevector(tweet_text=cleaned_tweet_text)
+    print feature_vector
 
 def cleanTweet(tweet_text):
-
     # Convert to lower case
     tweet_text = tweet_text.lower()
     # Convert www.* or https?://* to URL
@@ -38,10 +36,24 @@ def cleanTweet(tweet_text):
     print tweet_text
     return tweet_text
 
-def replaceTwoOrMore(tweet_text):
-    #look for 2 or more repetitions of character and replace with the character itself
+    # look for 2 or more repetitions of character and replace with the character itself
+def replaceTwoOrMore(word):
     pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
-    return pattern.sub(r"\1\1", s)
+    return pattern.sub(r"\1\1", word)
+
+def getFeaturevector(tweet_text):
+    feature_vector = []
+    words = tweet_text.split()
+    for word in words:
+        word = replaceTwoOrMore(word=word)
+        # strip out punctuation
+        word = word.strip('\'"?,.')
+        # check if the word stats with an alphabet
+        # TODO: find out if this works for Swahili
+        # val = re.search(r"^[a-zA-Z][a-zA-Z0-9]*$", word)
+        # TODO: Add list of stop words that don't add meaning to the feature vector
+        feature_vector.append(word.lower())
+    return feature_vector
 
     # finds out whether this is a water or electricty issue
 def issueCategorization():
