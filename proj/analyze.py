@@ -37,26 +37,46 @@ def domainExtractFeatures(feature_vector):
         features['domain mention (%s)' % word[0]] = domain # find out if the set contains the words in the domain feature list
     return features
 
-def getDomainRecognitionTrainingSet():
-    electricity_trainer_csv = open('proj/electricity_keywords.csv', "rb")
+def getDomainRecognitionList():
+    electricity_trainer_csv = open('proj/domain_keywords.csv', "rb")
     reader = csv.reader(electricity_trainer_csv)
 
-    domain_list = [] # tuple containing word and domain
+    domain_list = [] # tuple containing a word and its domain
 
     # specific for electricity
     # TODO: Switch to a more generalized csv file, that will work for new domains
     for row in reader:
+        if row[0] is not None:
+            domain_list.append((row[0],'electricity'))
+        if row[1] is not None:
+            if row[1] != "":
+                domain_list.append((row[1],'water'))
+        """
         colnum = 0
         for col in row:
             domain_list.append((row[colnum], 'electricity'))
+        """
+    print 'Domain list:'
+    print domain_list
     return domain_list
+
+def getDommainRecognitionTrainingSet():
+    # TODO: Read data from domain_training_set.csv, pass it to you extractor & use that information and results to train your classifier
+
+    training_set = []  # training set is a list of tuples (features, 'result')
+
 
 # to train the naive bayes algorithm, you need a tuple:
     # (dictionary, label)
 
-domain_feature_list = getDomainRecognitionTrainingSet()
-domain_recongition_classifier = nltk.NaiveBayesClassifier.train([({'contains-stima':True},'electricity')])
+#initialize lists and classifiers in memory
 
+domain_feature_list = getDomainRecognitionList()
+domain_recongition_classifier = nltk.NaiveBayesClassifier.train()
+
+
+def getIssueRecognitionList():
+    pass
 
 def getIssueRecognitionTrainingSet():
     pass
