@@ -149,11 +149,14 @@ def analyzeTweet(tweet):
         cf_analyzedtweets_tweetcategory = pycassa.ColumnFamily(pool, 'analyzedtweets_tweetcategory')
         cf_analyzedtweets_tweetcategory.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
 
-    # finds out whether this is a water or electricty issue
+def sentimentAnalysis(tweet):
+    pass
+
+# finds out whether this is a water or electricty issue
 def issueCategorization():
     pass
 
-    # finds out what time the issue occured
+# finds out what time the issue occured
 def issueTimeCategorization():
     pass
 
