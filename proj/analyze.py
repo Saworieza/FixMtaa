@@ -8,6 +8,9 @@ Before analyzing you have to clean the data
 # import regex
 import re
 
+# import csv read_raw_tweets_from_cassandra
+import csv
+
 # import nltk
 import nltk
 
@@ -15,12 +18,58 @@ from proj.celery import app
 
 import pycassa
 
+domain_recongition_classifier = None
+issue_recognition_classifier = None
+
+domain_feature_list = []
+issue_feature_list = []
+
+# use this to extract features of a domain
+def domainExtractFeatures(feature_vector):
+    tweet_words = set(feature_vector)  # remove duplicate vectors from tweet
+    features = {}
+    for word in domain_feature_list:
+        domain = None
+        if word[0] in tweet_words:
+            domain = word[1]  # if keyword is mentioned in tweet words, add it to as a mentioned category
+        else:
+            domain = 'undefined' # if it wasn't mentioned then, we put it in the undefined category
+        features['domain mention (%s)' % word[0]] = domain # find out if the set contains the words in the domain feature list
+    return features
+
+def getDomainRecognitionTrainingSet():
+    electricity_trainer_csv = open('proj/electricity_keywords.csv', "rb")
+    reader = csv.reader(electricity_trainer_csv)
+
+    domain_list = [] # tuple containing word and domain
+
+    # specific for electricity
+    # TODO: Switch to a more generalized csv file, that will work for new domains
+    for row in reader:
+        colnum = 0
+        for col in row:
+            domain_list.append((row[colnum], 'electricity'))
+    return domain_list
+
+# to train the naive bayes algorithm, you need a tuple:
+    # (dictionary, label)
+
+domain_feature_list = getDomainRecognitionTrainingSet()
+domain_recongition_classifier = nltk.NaiveBayesClassifier.train([({'contains-stima':True},'electricity')])
+
+
+def getIssueRecognitionTrainingSet():
+    pass
+
 @app.task
 def analyzeTweet(tweet):
     print 'about to analyze tweet'
     cleaned_tweet_text = cleanTweet(tweet_text=tweet['text'])
     feature_vector = getFeaturevector(tweet_text=cleaned_tweet_text)
-    print feature_vector
+    print 'Showing domain features:'
+    print domainExtractFeatures(feature_vector=feature_vector)
+    print 'Showing classifier output:'
+    print domain_recongition_classifier.classify(domainExtractFeatures(feature_vector=feature_vector))
 
 def cleanTweet(tweet_text):
     # Convert to lower case
