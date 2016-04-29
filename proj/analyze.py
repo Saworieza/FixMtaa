@@ -84,7 +84,8 @@ def getDomainRecognitionList():
     # TODO: Switch to a more generalized csv file, that will work for new domains
     for row in reader:
         if row[0] is not None:
-            domain_list.append((row[0],'electricity'))
+            if row[0] != "":
+                domain_list.append((row[0],'electricity'))
         if row[1] is not None:
             if row[1] != "":
                 domain_list.append((row[1],'water'))
