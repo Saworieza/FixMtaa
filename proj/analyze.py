@@ -11,6 +11,7 @@ import pycassa
 @app.task
 def analyze_tweet(tweet):
     print 'about to analyze tweet'
+    clean_tweets(tweet=tweet)
 
 def clean_tweets(tweet):
     pass
