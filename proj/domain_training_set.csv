@@ -5,14 +5,14 @@
 #fixmtaa An electric pole fall down off siaya road in Kileleswha,electricity
 #fixmtaa I'm in town but I'm almost certain there's a power outage in Kasarani,electricity
 #fixmtaa Child electrocuted in Likoni after Kenya Power poll falls due to heavy rains,electricity
+#fixmtaa We dont have lights at our place,electricity
 #fixmtaa Despite many calls about this situation behind Village Market water is being wasted,water
 #fixmtaa Good morning I have a broken sewer issue,water
 #fixmtaa Inquiring about restoration of water services in mountain view,water
 #fixmtaa Kindly advise if you guys are rationing water in Roysambu and Mirema,water
 #fixmta hakuna waba mtaani,water
-#fixmtaa testing classifier output,undefined
-#fixmtaa Nairobi is under water tonight,undefined
-#fixmtaa The volume of water flowing out of Nairobi Dam is unprecedented,undefined
-#fixmtaa A water bottle on the streets of Nairobi then you're part of the problem,undefined
-#fixmtaa Nairobi is flooded with rain water but the taps in half the neighborhoods are dry,undefined
-#fixmtaa We dont have lights at our place,electricity
+#fixmtaa testing classifier output,toanalyze
+#fixmtaa Nairobi is under water tonight,toanalyze
+#fixmtaa The volume of water flowing out of Nairobi Dam is unprecedented,toanalyze
+#fixmtaa A water bottle on the streets of Nairobi then you're part of the problem,toanalyze
+#fixmtaa Nairobi is flooded with rain water but the taps in half the neighborhoods are dry,toanalyze

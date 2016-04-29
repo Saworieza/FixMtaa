@@ -70,7 +70,7 @@ def domainExtractFeatures(feature_vector):
         if word[0] in tweet_words:
             domain = word[1]  # if keyword is mentioned in tweet words, add it to as a mentioned category
         else:
-            domain = 'undefined' # if it wasn't mentioned then, we put it in the undefined category
+            domain = 'toanalyze' # if it wasn't mentioned then, we put it in the undefined category
         features['domain mention (%s)' % word[0]] = domain # find out if the set contains the words in the domain feature list
     return features
 
@@ -136,7 +136,8 @@ def analyzeTweet(tweet):
     print 'Showing domain features:'
     print domainExtractFeatures(feature_vector=feature_vector)
     print 'Showing classifier output:'
-    print domain_recongition_classifier.classify(domainExtractFeatures(feature_vector=feature_vector))
+    classify_result = domain_recongition_classifier.classify(domainExtractFeatures(feature_vector=feature_vector))
+    print classify_result
 
 
     # finds out whether this is a water or electricty issue
