@@ -39,6 +39,8 @@ except URLError:
     print 'please check your network connection'
     sys.exit(0)
 
+print 'Streaming tweets...'
+
 # read all tweets in the iterator
 for tweet in iterator:
     if tweet is not None:

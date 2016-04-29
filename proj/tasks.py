@@ -8,7 +8,7 @@ from celery import Task
 from proj.celery import app
 from celery.decorators import periodic_task
 
-from proj.analyze import analyze_tweet
+from proj.analyze import analyzeTweet
 
 import pycassa
 
@@ -28,10 +28,9 @@ def save_raw_tweet_to_cassandra(tweet):
     cf_rawtweets_tweetid = pycassa.ColumnFamily(pool, 'rawtweets_tweetid')
     cf_rawtweets_tweettimestamp = pycassa.ColumnFamily(pool, 'rawtweets_tweettimestamp')
     cf_rawtweets_tweetid.insert(tweet['id_str'], {'tweet_text': tweet['text'], 'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_id': tweet['user']['id_str'], 'user_name': tweet['user']['name'], 'user_screen_name': tweet['user']['screen_name'], 'user_created_at': tweet['user']['created_at']})
-    cf_rawtweets_tweettimestamp.insert(int(tweet['timestamp_ms'][:-3]), {'tweet_text': tweet['text'], 'tweet_timestamp': int(tweet['id_str']), 'user_id': tweet['user']['id_str'], 'user_name': tweet['user']['name'], 'user_screen_name': tweet['user']['screen_name'], 'user_created_at': tweet['user']['created_at']})
+    # cf_rawtweets_tweettimestamp.insert(int(tweet['timestamp_ms'][:-3]), {'tweet_text': tweet['text'], 'tweet_timestamp': int(tweet['id_str']), 'user_id': tweet['user']['id_str'], 'user_name': tweet['user']['name'], 'user_screen_name': tweet['user']['screen_name'], 'user_created_at': tweet['user']['created_at']})
     print 'raw tweet stored in cassandra'
-    analyze_tweet.apply_async((tweet,))
-
+    analyzeTweet.apply_async((tweet,))
 
 
 @periodic_task(run_every=timedelta(seconds= 30))
