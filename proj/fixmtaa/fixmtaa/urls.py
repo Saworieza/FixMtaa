@@ -16,6 +16,13 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
+from rest_framework.urlpatterns import format_suffix_patterns  # allows us to specify JSON payload instead of browsable API
+
+from api.views import GetRawTweets
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^api/tweets/raw/$', GetRawTweets.as_view()),
 ]
+
+urlpatterns = format_suffix_patterns(urlpatterns, allowed=['json','html'])
