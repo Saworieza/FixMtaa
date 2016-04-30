@@ -211,6 +211,7 @@ def analyzeTweet(tweet):
         sentimentAnalysis(tweet=tweet,tweet_class=classify_result,feature_vector=feature_vector)
 
 def sentimentAnalysis(tweet,tweet_class,feature_vector):
+    print 'starting sentiment analysis'
     if tweet_class == "electricity":
         electrictySentimentAnalysis(tweet=tweet,tweet_class=tweet_class,feature_vector=feature_vector)
     elif tweet_class == "water":
@@ -222,15 +223,33 @@ def sentimentAnalysis(tweet,tweet_class,feature_vector):
 def getWaterRecognitionList():
     pass
 
+def saveSentimentToCassandra(tweet,tweet_sentiment):
+    print 'saving sentiment to Cassandra'
+    cf_sentimenttweets_tweetcategory = pycassa.ColumnFamily(pool, 'sentimenttweets_tweetcategory')
+    cf_sentimenttweets_tweetcategory.insert(tweet['id_str'], {'tweet_text': tweet['text'], 'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_sentiment': tweet_sentiment})
+
+def saveSentimentToAnalyzeCassandra(tweet,tweet_sentiment):
+    print 'saving sentiment to Cassandra'
+    cf_sentimenttweets_toanalyze = pycassa.ColumnFamily(pool, 'sentimenttweets_toanalyze')
+    cf_sentimenttweets_toanalyze.insert(tweet['id_str'], {'tweet_text': tweet['text'], 'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_sentiment': tweet_sentiment})
+
 def electrictySentimentAnalysis(tweet,tweet_class,feature_vector):
     classify_result = electricity_sentiment_classifier.classify(electricityExtractFeatures(feature_vector=feature_vector))
     print 'classification of electricity tweet:'
     print classify_result
+    if classify_result == "toanalyze":
+        saveSentimentToAnalyzeCassandra(tweet=tweet, tweet_sentiment=classify_result)
+    else:
+        saveSentimentToCassandra(tweet=tweet, tweet_sentiment=classify_result)
 
 def waterSentimentAnalysis(tweet,tweet_class,feature_vector):
     classify_result = water_sentiment_classifier.classify(waterExtractFeatures(feature_vector=feature_vector))
     print 'classification of water tweet'
     print classify_result
+    if classify_result == "toanalyze":
+        saveSentimentToAnalyzeCassandra(tweet=tweet, tweet_sentiment=classify_result)
+    else:
+        saveSentimentToCassandra(tweet=tweet, tweet_sentiment=classify_result)
 
 # finds out whether this is a water or electricty issue
 def issueCategorization():
