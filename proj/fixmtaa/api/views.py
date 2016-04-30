@@ -1,6 +1,14 @@
+from __future__ import absolute_import
+
+import sys
+
+sys.path.insert(0,'../..')
+
 from django.shortcuts import render
 
 # Create your views here.
+
+from proj.query import getRawTweets, getRawTweetsToAnalyze
 
 from rest_framework.views import APIView, Response, status
 
@@ -15,4 +23,5 @@ class GetRawTweets(APIView):
     permission_classes = (AllowAny,)
 
     def get(self,request,format=None):
-         return Response({'data': []})
+        data = getRawTweets()
+        return Response({'data': data})
