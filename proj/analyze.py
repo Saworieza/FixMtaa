@@ -118,6 +118,7 @@ def getDomainRecognitionList():
     return domain_list
 
 def getElectricityRecognitionList():
+    # TODO: Make recognition smarter by creating a better feature extractor. Should recognize tweets like 'no power outage' as not being negative
     domain_keywords_csv = open('proj/electricity_sentiment.csv', "rb")
     reader = csv.reader(domain_keywords_csv)
 

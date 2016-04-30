@@ -13,6 +13,7 @@ electrical failure,negative
 failure,negative
 interruption,negative
 disconnection,negative
+power disconnection,negative
 no power,negative
 no lights,negative
 without power,negative
