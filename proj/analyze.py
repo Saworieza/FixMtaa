@@ -24,6 +24,7 @@ pool = pycassa.ConnectionPool('tweets') # we can then use this connection pool t
 
 domain_recongition_classifier = None
 electricity_sentiment_classifier = None
+water_sentiment_classifier = None
 # issue_recognition_classifier = None
 
 domain_feature_list = []
@@ -98,6 +99,18 @@ def electricityExtractFeatures(feature_vector):
         features['negativity meantioned (%s)' % word[0]] = domain
     return features
 
+def waterExtractFeatures(feature_vector):
+    tweet_words = set(feature_vector)
+    features = {}
+    for word in water_feature_list:
+        domain = None
+        if word[0] in tweet_words:
+            domain = "negative"
+        else:
+            domain = "toanalyze"
+        features['negativity mentioned (%s)' % word[0]] = domain
+    return features
+
 def getDomainRecognitionList():
     domain_keywords_csv = open('proj/domain_keywords.csv', "rb")
     reader = csv.reader(domain_keywords_csv)
@@ -121,12 +134,17 @@ def getElectricityRecognitionList():
     # TODO: Make recognition smarter by creating a better feature extractor. Should recognize tweets like 'no power outage' as not being negative
     domain_keywords_csv = open('proj/electricity_sentiment.csv', "rb")
     reader = csv.reader(domain_keywords_csv)
-
     domain_list = []  # tuple (tag,sentiment)
-
     for row in reader:
         domain_list.append((row[0],row[1]))
+    return domain_list
 
+def getWaterRecognitionList():
+    domain_keywords_csv = open('proj/water_sentiment.csv', "rb")
+    reader = csv.reader(domain_keywords_csv)
+    domain_list = []  # tuple (tag, sentiment)
+    for row in reader:
+        domain_list.append((row[0],row[1]))
     return domain_list
 
 def getDommainRecognitionTrainingSet():
@@ -150,16 +168,23 @@ def getElectricitySentimentTrainingSet():
         training_set.append((electricityExtractFeatures(feature_vector=feature_vector),row[1]))
     return training_set
 
-
-# to train the naive bayes algorithm, you need a tuple:
-    # (dictionary, label)
+def getWaterSentimentTrainingSet():
+    water_training_csv = open('proj/water_sentiment_training_set.csv')
+    reader = csv.reader(water_training_csv)
+    training_set = []
+    for row in reader:
+        cleaned_tweet_text = cleanTweet(tweet_text=row[0])
+        feature_vector = getFeaturevector(tweet_text=cleaned_tweet_text)
+        training_set.append((waterExtractFeatures(feature_vector=feature_vector),row[1]))
+    return training_set
 
 #initialize lists and classifiers in memory
-
 domain_feature_list = getDomainRecognitionList()
 domain_recongition_classifier = nltk.NaiveBayesClassifier.train(getDommainRecognitionTrainingSet())
 electricity_feature_list = getElectricityRecognitionList()
 electricity_sentiment_classifier = nltk.NaiveBayesClassifier.train(getElectricitySentimentTrainingSet())
+water_feature_list = getWaterRecognitionList()
+water_sentiment_classifier = nltk.NaiveBayesClassifier.train(getWaterSentimentTrainingSet())
 
 def getIssueRecognitionList():
     pass
@@ -203,7 +228,9 @@ def electrictySentimentAnalysis(tweet,tweet_class,feature_vector):
     print classify_result
 
 def waterSentimentAnalysis(tweet,tweet_class,feature_vector):
-    pass
+    classify_result = water_sentiment_classifier.classify(waterExtractFeatures(feature_vector=feature_vector))
+    print 'classification of water tweet'
+    print classify_result
 
 # finds out whether this is a water or electricty issue
 def issueCategorization():
