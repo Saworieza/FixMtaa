@@ -7,6 +7,8 @@ Before analyzing you have to clean the data
 
 import os
 
+import time
+
 import tweepy  # switch to tweepy for posting to twitter
 
 # import regex
@@ -231,7 +233,7 @@ def analyzeTweet(tweet):
         cf_analyzedtweets_toanalyze.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
         print "We didn't understand your tweet, your next visit will be better"
         # t.statuses.update(status="@nigelnindo we didn't understand your tweet, your next visit will be better.")
-        api.update_status("@nigelnindo we didn't understand your tweet, your next visit will be better.")
+        api.update_status("@{0} we didn't understand your tweet, your next visit will be better. {1}".format(tweet['user']['screen_name'], time.time()))
     else:
         cf_analyzedtweets_tweetcategory = pycassa.ColumnFamily(pool, 'analyzedtweets_tweetcategory')
         cf_analyzedtweets_tweetcategory.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
@@ -268,12 +270,12 @@ def electrictySentimentAnalysis(tweet,tweet_class,feature_vector):
         saveSentimentToAnalyzeCassandra(tweet=tweet, tweet_sentiment=classify_result)
         print "We think you had an electricty issue, but we are not sure yet."
         # t.statuses.update(status="@nigelnindo we think you had an electricty issue, but we are not sure yet.")
-        api.update_status("@nigelnindo we think you had an electricty issue, but we are not sure yet.")
+        api.update_status("@{0} we think you had an electricty issue, but we are not sure yet. {1}".format(tweet['user']['screen_name'], time.time()))
     else:
         saveSentimentToCassandra(tweet=tweet, tweet_sentiment=classify_result)
         print "Your issue has been forwarded to Kenya Power."
         # t.statuses.update(status="@nigelnindo your issue has been forwarded to Kenya Power.")
-        api.update_status("@nigelnindo your issue has been forwarded to Kenya Power.")
+        api.update_status("@{0} your issue has been forwarded to Kenya Power. {1}".format(tweet['user']['screen_name'], time.time()))
 
 def waterSentimentAnalysis(tweet,tweet_class,feature_vector):
     classify_result = water_sentiment_classifier.classify(waterExtractFeatures(feature_vector=feature_vector))
@@ -283,12 +285,12 @@ def waterSentimentAnalysis(tweet,tweet_class,feature_vector):
         saveSentimentToAnalyzeCassandra(tweet=tweet, tweet_sentiment=classify_result)
         print "We think you had a water issue, but we're not sure yet."
         # t.statuses.update(status="@nigelnindo we think you had a water issue, but we're not sure yet.")
-        api.update_status("@nigelnindo we think you had a water issue, but we're not sure yet.")
+        api.update_status("@{0} we think you had a water issue, but we're not sure yet. {1}".format(tweet['user']['screen_name'], time.time()))
     else:
         saveSentimentToCassandra(tweet=tweet, tweet_sentiment=classify_result)
         print "Your issue has been forwarded to Nairobi Water & Sewerage."
         # t.statuses.update(status="@nigelnindo your issue has been forwarded to Nairobi Water & Sewerage.")
-        api.update_status("@nigelnindo your issue has been forwarded to Nairobi Water & Sewerage.")
+        api.update_status("@{0} your issue has been forwarded to Nairobi Water & Sewerage. {1}".format(tweet['user']['screen_name'], time.time()))
 
 # finds out whether this is a water or electricty issue
 def issueCategorization():
