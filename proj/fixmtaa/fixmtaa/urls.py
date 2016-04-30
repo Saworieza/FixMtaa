@@ -18,11 +18,23 @@ from django.contrib import admin
 
 from rest_framework.urlpatterns import format_suffix_patterns  # allows us to specify JSON payload instead of browsable API
 
-from api.views import GetRawTweets
+from api.views import (
+    GetRawTweets,
+    GetRawTweetsToAnalyze,
+    GetCategorizedTweets,
+    GetCategorizedTweetsToAnalyze,
+    GetSentimentTweets,
+    GetSentimentTweetsToAnalyze
+)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/tweets/raw/$', GetRawTweets.as_view()),
+    url(r'^api/tweets/raw/analyze/$', GetRawTweetsToAnalyze.as_view()),
+    url(r'^api/tweets/categorized/$', GetCategorizedTweets.as_view()),
+    url(r'^api/tweets/categorized/analyze/$', GetCategorizedTweetsToAnalyze.as_view()),
+    url(r'^api/tweets/sentiment/$', GetSentimentTweets.as_view()),
+    url(r'^api/tweets/sentiment/analyze/$', GetSentimentTweetsToAnalyze.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns, allowed=['json','html'])

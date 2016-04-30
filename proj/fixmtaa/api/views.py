@@ -25,3 +25,33 @@ class GetRawTweets(APIView):
     def get(self,request,format=None):
         data = getRawTweets()
         return Response({'data': data})
+
+class GetRawTweetsToAnalyze(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self,request,format=None):
+        return Response({'data': []})
+
+class GetCategorizedTweets(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self,request,format=None):
+        return Response({'data':[]})
+
+class GetCategorizedTweetsToAnalyze(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self,request,format=None):
+        return Response({'data': []})
+
+class GetSentimentTweets(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self,request,format=None):
+        return Response({'data': []})
+
+class GetSentimentTweetsToAnalyze(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self,request,format=None):
+        return Response({'data': []})
