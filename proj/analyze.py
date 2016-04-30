@@ -68,6 +68,7 @@ def replaceTwoOrMore(word):
     pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
     return pattern.sub(r"\1\1", word)
 
+# split tweet into words
 def getFeaturevector(tweet_text):
     feature_vector = []
     words = tweet_text.split()
@@ -219,10 +220,8 @@ def analyzeTweet(tweet):
     if classify_result == "toanalyze":
         cf_analyzedtweets_toanalyze = pycassa.ColumnFamily(pool, 'analyzedtweets_toanalyze')
         cf_analyzedtweets_toanalyze.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
-        t.direct_messages.new(
-            user=tweet['user']['screen_name'],
-            text="We didn't understand your tweet, your next visit will be better."
-        )
+        print "We didn't understand your tweet, your next visit will be better"
+        t.statuses.update(status="@nigelnindo we didn't understand your tweet, your next visit will be better.")
     else:
         cf_analyzedtweets_tweetcategory = pycassa.ColumnFamily(pool, 'analyzedtweets_tweetcategory')
         cf_analyzedtweets_tweetcategory.insert(tweet['id_str'], {'tweet_text': tweet['text'],'tweet_timestamp': int(tweet['timestamp_ms'][:-3]), 'user_screen_name': tweet['user']['screen_name'], 'tweet_category': classify_result})
@@ -257,16 +256,12 @@ def electrictySentimentAnalysis(tweet,tweet_class,feature_vector):
     print classify_result
     if classify_result == "toanalyze":
         saveSentimentToAnalyzeCassandra(tweet=tweet, tweet_sentiment=classify_result)
-        t.direct_messages.new(
-            user=tweet['user']['screen_name'],
-            text="We think you had an electricty issue, but we are not sure yet."
-        )
+        print "We think you had an electricty issue, but we are not sure yet."
+        t.statuses.update(status="@nigelnindo we think you had an electricty issue, but we are not sure yet.")
     else:
         saveSentimentToCassandra(tweet=tweet, tweet_sentiment=classify_result)
-        t.direct_messages.new(
-            user=tweet['user']['screen_name'],
-            text="Your issue has been forwarded to Kenya Power."
-        )
+        print "Your issue has been forwarded to Kenya Power."
+        t.statuses.update(status="@nigelnindo your issue has been forwarded to Kenya Power.")
 
 def waterSentimentAnalysis(tweet,tweet_class,feature_vector):
     classify_result = water_sentiment_classifier.classify(waterExtractFeatures(feature_vector=feature_vector))
@@ -274,16 +269,12 @@ def waterSentimentAnalysis(tweet,tweet_class,feature_vector):
     print classify_result
     if classify_result == "toanalyze":
         saveSentimentToAnalyzeCassandra(tweet=tweet, tweet_sentiment=classify_result)
-        t.direct_messages.new(
-            user=tweet['user']['screen_name'],
-            text="We think you had a water issue, but we're not sure yet."
-        )
+        print "We think you had a water issue, but we're not sure yet."
+        t.statuses.update(status="@nigelnindo we think you had a water issue, but we're not sure yet.")
     else:
         saveSentimentToCassandra(tweet=tweet, tweet_sentiment=classify_result)
-        t.direct_messages.new(
-            user=tweet['user']['screen_name'],
-            text="Your issue has been forwarded to Nairobi Water & Sewerage."
-        )
+        print "Your issue has been forwarded to Nairobi Water & Sewerage."
+        t.statuses.update(status="@nigelnindo your issue has been forwarded to Nairobi Water & Sewerage.")
 
 # finds out whether this is a water or electricty issue
 def issueCategorization():
