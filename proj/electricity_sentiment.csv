@@ -16,3 +16,6 @@ power disconnection,negative
 no power,negative
 no lights,negative
 without power,negative
+blew,negative
+vandalized,negative
+darkness,negative
