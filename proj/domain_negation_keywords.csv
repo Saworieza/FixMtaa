@@ -1,0 +1,12 @@
+darkness,electricity,no
+outage,electricity,yes
+loss,electricity,yes
+out,electricity,no
+blackout,electricity,no
+blew,electricity,no
+off,electricity,no
+on off,electricity,no
+dim,electricity,yes
+blown,electricity,yes
+failure,electricity,no
+cut,electricity,no
