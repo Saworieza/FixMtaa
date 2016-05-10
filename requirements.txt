@@ -7,3 +7,4 @@ numpy==1.11.0
 matplotlib==1.5.0
 djangorestframework == 3.3.2
 pycassa==1.11.1
+cassandra-driver==3.3.0
