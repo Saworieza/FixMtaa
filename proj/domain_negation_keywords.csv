@@ -1,12 +1,14 @@
-darkness,electricity,no,no
-outage,electricity,no,yes
-loss,electricity,no,yes
-out,electricity,no,yes
-blackout,electricity,no,no
-blew,electricity,no,yes
-off,electricity,no,yes
-on off,electricity,no,no
-dim,electricity,yes,yes
-blown,electricity,yes,yes
-failure,electricity,no,yes
-cut,electricity,no,yes
+darkness,electricity,no,no,yes
+outage,electricity,no,yes,yes
+loss,electricity,no,yes,yes
+out,electricity,no,yes,no
+blackout,electricity,no,yes,yes
+blew,electricity,no,yes,no
+off,electricity,no,yes,no
+on off,electricity,no,no,no
+dim,electricity,yes,yes,no
+blown,electricity,yes,yes,no
+failure,electricity,no,yes,no
+cut,electricity,no,yes,no
+fluctuation,electricity,no,yes,yes
+fluctuations,electricity,no,yes,yes

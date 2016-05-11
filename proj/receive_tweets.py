@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 
 from proj.celery import app
+from proj.updated_analysis import analysisTweetReceiver
 
+import re
 import csv
 
 # place stop words in memory to avoid re-generation
@@ -39,6 +41,7 @@ def cleanTweet(tweet_text):
     print tweet_text
     return tweet_text
 
+
 def tokenizeTweet(tweet_text):  # similar to getFeaturevector function
     tweet_text = cleanTweet(tweet_text=tweet_text)
     tweet_tokens = []
@@ -46,6 +49,11 @@ def tokenizeTweet(tweet_text):  # similar to getFeaturevector function
     for word in words:
         # strip out punctuation
         word = word.strip('\'"?,.')
-        if word not in stop_words:
+        if word not in stop_words_list:
             tweet_tokens.append((word, 'u', 'u'))
     return tweet_tokens  # returns a list of token tuples
+
+@app.task
+def tweetReceiver(tweet_text):
+    tweet_tokens = tokenizeTweet(cleanTweet(tweet_text=tweet_text))
+    analysisTweetReceiver.apply_async((tweet_text,tweet_tokens))

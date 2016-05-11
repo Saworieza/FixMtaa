@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-# from proj.celery import app
+from proj.celery import app
 
 import csv
 
@@ -57,8 +57,8 @@ def generateDomainNegationKeywords():
     domain_negation_keywords = open('proj/domain_negation_keywords.csv', "rb")
     reader = csv.reader(domain_negation_keywords)
     for row in reader:
-        # word | domain | can_prefix | can_suffix
-        domain_negation_keywords_list.append((row[0], row[1], row[2], row[3]))
+        # word | domain | can_prefix | can_suffix | is_independent
+        domain_negation_keywords_list.append((row[0], row[1], row[2], row[3], row[4]))
 
 generateDomainKeywords()
 generateDomainIndicatorKeywords()
@@ -68,7 +68,7 @@ generateDomainNegationKeywords()
 
 def findDomainNegationKeywords(tweet_tokens, identified_domain):
     # create a new list containing only keywords from that domain
-    specified_domain_negation_keywords = [text for text, domain, can_prefix, can_suffix in domain_negation_keywords_list if domain == identified_domain]
+    specified_domain_negation_keywords = [text for text, domain, can_prefix, can_suffix, is_independent in domain_negation_keywords_list if domain == identified_domain]
     if not specified_domain_negation_keywords:
         # this means that this is an empty list
         print "The domain doesn't have any negation keywords"
@@ -96,7 +96,7 @@ def findNegationKeywords(tweet_tokens):
     token_index = 0
     for text, classifier, domain in tweet_tokens:
         if classifier == 'u':
-            if text in negation_data:
+            if text in negation_keywords_list:
                 # update tweet_tokens
                 # negation_index = negation_data.index(text)
                 tweet_tokens[token_index] = (text, 'NK', 'u')
@@ -168,7 +168,17 @@ def getDomainByDomainIdentifiers(tweet_tokens):
         return None
     else:
         # TODO: Deal with max having two or more domains i.e {'electricity': 2, 'water': 2} !!!IMPORTANT!!!
-        return max(domain_counter, key=domain_counter.get())
+        int_values = []
+        for key, val in domain_counter.items():
+            int_values.append(val)
+        max_int_value = max(int_values)
+        for key, val in domain_counter.items():
+            if val == max_int_value:
+                print 'returning max DI'
+                print key
+                return key
+    return None  # don't see this happening
+
 
 
 def getTweetDomain(tweet_tokens):
@@ -210,36 +220,47 @@ def isValidIndex(list_to_check, index_to_check):
 
 def getKeywordsAfterNK(tweet_tokens, domain_negators):
     token_index = 0
+    print tweet_tokens
     for text, classifier, domain in tweet_tokens:
         if classifier == 'NK':
+            print 'found a negative keyword'
             # check if next token classifier is a keyword
             if isValidIndex(tweet_tokens, token_index + 1):
                 if tweet_tokens[token_index + 1][1] == 'DK':
+                    print 'next token classifier is a domain keyword'
                     # check if token classifier after keywords is a domain negator
                     if isValidIndex(tweet_tokens, token_index + 2):
                         if tweet_tokens[token_index + 2][1] == 'DNK':
+                            print 'next token after domain keyword is a domain negation keyword'
                             # if it is a domain negator, check whether it can be suffixed after a keyword
                             dnk_index = [index for index, domain_list in enumerate(domain_negators) if domain_list[0] == tweet_tokens[token_index + 2][0]]
-                            if domain_negators[dnk_index][3] == 'yes':
+                            if domain_negators[dnk_index[0]][3] == 'yes':
+                                print 'domain negation keyword can be suffixed after a domain keyword'
                                 # means we have a NK-DK-DNK combination which is false
                                 return (False, 'verified')
                             else:
+                                print "domain negation keyword can't be suffixed after a domain keyword"
                                 # although we have a NK-DK-DNK combination, the DNK can't be used as a suffix for DK's
                                 return (True, 'verified')
                         else:
+                            print 'print there was no domain negation keyword found, tweet is negative'
                             # next token found was not a domain negator, we have a negative tweet
                             return (True, 'verified')
                     else:
+                        print 'There was no next token, tweet is negative'
                         # the was no token found after confirming an NK-DK combination
                         return (True, 'verified')
                 else:
+                    print "Next token is not a domain keyword, can't verify sentiment"
                     # next token classifier was not a keyword, can't very negative sentiment
                     pass
             else:
+                print "No next token available, can't verify sentiment"
                 # there is no next token, can't verify negative sentiment insinuated by NK
                 pass
         token_index = token_index + 1
     # return False & unverified if we were not able to determine sentiment after this step
+    print "negative keywords filtering didn't failed to find tweet sentiment"
     return (False, 'unverified')
 
 
@@ -247,22 +268,43 @@ def getDomainNegativeDescriptors(tweet_tokens, domain_negators):
     token_index = 0
     for text, classifier, domain in tweet_tokens:
         if classifier == 'DNK':
+            print 'Found a domain negative keyword'
             dnk_index = [index for index, domain_list in enumerate(domain_negators) if domain_list[0] == text]
             # check if if the DNK cannot be prefixed or suffixed
-            if domain_negators[dnk_index][2] == 'no' and domain_negators[dnk_index][3] == 'no':
+            if domain_negators[dnk_index[0]][2] == 'no' and domain_negators[dnk_index[0]][3] == 'no':
+                print 'DNK cannot be prefixed or suffixed, inherently independent'
                 # check if a negative keyword comes before it
-                if isValidIndex(tweet_tokens, token_index -1):
+                if isValidIndex(tweet_tokens, token_index - 1):
                     if tweet_tokens[token_index - 1][1] == 'NK':
+                        print "negator keyword found before independent DNK, tweet is positive"
                         # token found before DNK that was a negator
                         return (False, 'verified')
                     else:
+                        print "negator keyword not found before independent DNK, tweet is negative"
                         # token found before DNK, but it wasn't a negator
                         return (True, 'verified')
                 else:
                     # no tokens found before DNK, shows negative tweet
                     return (True, 'verified')
+            # check if DNK is independent
+            if domain_negators[dnk_index[0]][4] == 'yes':
+                print 'DNK is independent'
+                # check if a negative keyword comes before it
+                if isValidIndex(tweet_tokens, token_index - 1):
+                    if tweet_tokens[token_index - 1][1] == 'NK':
+                        # token found before independent DNK was a negator
+                        print "negator keyword found before independent DNK, tweet is positive"
+                        return (False, 'verified')
+                    else:
+                        # token found before independent DNK was not a negator
+                        print "negator keyword not found before independent DNK, tweet is negative"
+                        return (True, 'verified')
+                else:
+                    # no tokens before DNK, negative tweet
+                        return (True, 'verified')
             # check if the DNK can be prefixed before a keyword [we get here only if it can be prefixed or suffixed]
-            if domain_negators[dnk_index][2] == 'yes':
+            if domain_negators[dnk_index[0]][2] == 'yes':
+                print 'DNK can be prefixed by a keyword'
                 # check if a keyword comes after it
                 if isValidIndex(tweet_tokens, token_index + 1):
                     if tweet_tokens[token_index + 1][1] == 'DK':
@@ -281,24 +323,30 @@ def getDomainNegativeDescriptors(tweet_tokens, domain_negators):
                     # no other token comes after this DNK, can't verify negativity of tweet
                     pass
             # check if DNK can be suffixed after a keyword
-            if domain_negators[dnk_index][3] == 'yes':
+            if domain_negators[dnk_index[0]][3] == 'yes':
+                print 'DNK can be suffixed by a keyword'
                 # check if a keyword comes before it
                 if isValidIndex(tweet_tokens, token_index -1):
                     if tweet_tokens[token_index - 1][1] == 'DK':
+                        print 'a domain keyword comes before this DNK'
                         # check if a negation keyword comes before the domain keyword
                         if isValidIndex(tweet_tokens, token_index - 2):
                             if tweet_tokens[token_index - 2][1] == 'NK':
+                                print 'a negator keyword comes before the domain keyword, tweet is positive'
                                 # NK-DK-DNK combination found, tweet is positive
                                 return (False, 'verified')
                             else:
+                                print 'a negator keyword does not come before the domain keyword, tweet is negative'
                                 # no NK before DK-DNK combination, tweet is negative
                                 return (True, 'verified')
                         else:
-                            # no token before DK-DNK combination, negativity confirmed
+                            print 'no word/token found before domain keyword, tweet is negative'
                             return (True, 'verified')
                 else:
+                    print "Can't verify negativity of DNK if no word comes before a suffixed DNK"
                     # no other token comes before DNK, unable to verify negativity of tweet
                     pass
+        token_index = token_index + 1
     return (False, 'unverified')
 
 
@@ -308,12 +356,16 @@ def getTweetProblem(tweet_tokens, identified_domain):
        that we have undeffited, we may have to switch to decision trees if using
        if-else statements becomes cumbersome and difficult to follow.
     """
+    print 'getting tweet problem'
+    print identified_domain
     # ->True [Negative sentiment found] ->False[Positive sentiment found/sentiment unconfirmed]
     negative_sentiment = (False, 'unverified')
     # get domain_negators for identified_domain
-    domain_negators = [domain_list for index, domain_list in enumerate(domain_negation_keywords_list) if domain_list[0] == identified_domain]
-    print 'filtered domain negators'
-    print domain_negators
+    # print domain_negation_keywords_list
+    domain_negators = [domain_list for index, domain_list in enumerate(domain_negation_keywords_list) if domain_list[1] == identified_domain]
+    # print 'filtered domain negators'
+    # print domain_negators
+    # print tweet_tokens
     negative_sentiment = getKeywordsAfterNK(tweet_tokens=tweet_tokens, domain_negators=domain_negators)
     if negative_sentiment[0] == False and negative_sentiment[1] == 'unverified':
         negative_sentiment = getDomainNegativeDescriptors(tweet_tokens=tweet_tokens, domain_negators=domain_negators)
@@ -338,10 +390,10 @@ def extractTweetDomainInformation(tweet_tokens):
 
 
 def extractTweetInfomationAfterDomainIdentification(tweet_tokens, identified_domain):
-    return findDomainNegationKeywords(findDomainNegationKeywords(tweet_tokens=tweet_tokens), identified_domain=identified_domain)
+    return findDomainNegationKeywords(findNegationKeywords(tweet_tokens=tweet_tokens), identified_domain=identified_domain)
 
 
-# @app.task
+@app.task
 def analysisTweetReceiver(tweet, tweet_tokens):
     """
     ->  This is the method that recieves the unmodifed tweets, together with
@@ -355,10 +407,13 @@ def analysisTweetReceiver(tweet, tweet_tokens):
         return
     # update tweet tokens after domain identification
     tweet_tokens = extractTweetInfomationAfterDomainIdentification(tweet_tokens=tweet_tokens, identified_domain=identified_domain)
+    # method above return a tuple (tweet_tokens, boolean). Boolean shows if there are any negation keywords for this domain.
     # we can now use the updated tweet_tokens to identify the problem in the tweet
     # negative_sentiment is a tuple with a boolean for sentiment state and whether the boolean value has been verified by the algorithm
     # this covers the case where we don't have a negative sentiment that has been determined by the algorithm
-    negative_sentiment = getTweetProblem(tweet_tokens=tweet_tokens, identified_domain=identified_domain)
+    negative_sentiment = getTweetProblem(tweet_tokens=tweet_tokens[0], identified_domain=identified_domain)
+    print 'showing negative sentiment:'
+    print negative_sentiment
 
 
 # TODO: Switch to DataStax python driver for cassandra
