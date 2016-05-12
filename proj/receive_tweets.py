@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import pprint
 import re
 import csv
 
@@ -14,6 +15,7 @@ cf_raw_tweets_tweet_timestamp = pycassa.ColumnFamily(pool, 'raw_tweets_tweet_tim
 # place stop words in memory to avoid re-generation
 stop_words_list = []
 
+pp = pprint.PrettyPrinter(indent=4)  # pretty printer for twitter data
 
 # Comment out all official cassandra driver code
 
@@ -69,7 +71,11 @@ def saveRawTweetToCassandraByTimeStamp(tweet):
         geo_tagged = False
     else:
         geo_tagged = True
-    cf_raw_tweets_tweet_timestamp.insert(int(tweet['timestamp_ms'][:-3]), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'user_screen_name': tweet['user']['screen_name'], 'user_location': tweet['user']['location'], 'is_geo_tagged': geo_tagged})
+    # some twitter users don't have location info, was causing null field errors in DB
+    user_location = 'N/A'
+    if tweet['user']['location'] is not None:
+        user_location = tweet['user']['location']
+    cf_raw_tweets_tweet_timestamp.insert(int(tweet['timestamp_ms'][:-3]), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'user_screen_name': tweet['user']['screen_name'], 'user_location': user_location, 'is_geo_tagged': geo_tagged})
 
 
 def cleanTweet(tweet_text):

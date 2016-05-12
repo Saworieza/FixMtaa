@@ -1,13 +1,28 @@
 from __future__ import absolute_import
 
-from proj.celery import app
-
 import csv
+import time
 
 import pycassa
 
+from proj.celery import app
+
 pool = pycassa.ConnectionPool('tweets')
-cf_domainless_tweets = pycassa.ColumnFamily(pool, 'domainless_tweets')
+
+cf_domainless_tweets_by_timestamp = pycassa.ColumnFamily(pool, 'domainless_tweets_by_timestamp')
+cf_domainless_tweets_by_tweet_id = pycassa.ColumnFamily(pool, 'domainless_tweets_by_tweet_id')
+
+cf_negative_tweets_by_timestamp = pycassa.ColumnFamily(pool, 'negative_tweets_by_timestamp')
+cf_negative_tweets_by_domain = pycassa.ColumnFamily(pool, 'negative_tweets_by_domain')
+cf_negative_tweets_by_tweet_id = pycassa.ColumnFamily(pool, 'negative_tweets_by_tweet_id')
+
+cf_positive_tweets_by_timestamp = pycassa.ColumnFamily(pool, 'positive_tweets_by_timestamp')
+cf_positive_tweets_by_domain = pycassa.ColumnFamily(pool, 'positive_tweets_by_domain')
+cf_positive_tweets_by_tweet_id = pycassa.ColumnFamily(pool, 'positive_tweets_by_tweet_id')
+
+cf_unverified_tweets_by_timestamp = pycassa.ColumnFamily(pool, 'unverified_tweets_by_timestamp')
+cf_unverified_tweets_by_domain = pycassa.ColumnFamily(pool, 'unverified_tweets_by_domain')
+cf_unverified_tweets_by_tweet_id = pycassa.ColumnFamily(pool, 'unverified_tweets_by_tweet_id')
 
 # from cassandra.cluster import Cluster
 # cluster = Cluster()  # use default args for now
@@ -382,36 +397,52 @@ def getTweetProblem(tweet_tokens, identified_domain):
         negative_sentiment = getDomainNegativeDescriptors(tweet_tokens=tweet_tokens, domain_negators=domain_negators)
     return negative_sentiment
 
+def getTweetTokensAsString(tweet_tokens):
+    token_string = ""
+    for token in tweet_tokens:
+        token_string = token_string + token[0] + ", "  # TODO: store both token text & classifier
+    return token_string
 
-def domainlessHandler(tweet, tweet_text, tweet_tokens):
+def domainlessHandler(tweet, tweet_tokens):
     # TODO: save to cassandra & return appropriate error message to the user
     # store tweets by current timestamp & tweet_id
     # timestamp # || current_timestamp || tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_text | tweet_tokens |
-    print 'RESULT: domainless : {0}'.format(tweet_text).encode('utf-8').strip()
-    # print 'impelemt domainlessHandler handler function'
+    # print 'RESULT: domainless : {0}'.format(tweet['text']).encode('utf-8').strip()  # TODO: Fix non-unicode character display in terminal
+    cf_domainless_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
+    cf_domainless_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
+    # TODO: send feedback to user using tweepy
 
-def negativeSentimentHandler(tweet, tweet_text, tweet_tokens):
+def negativeSentimentHandler(tweet, tweet_tokens, identified_domain):
     # store tweets by current timestamp, domain & tweet_id
     # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
     # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
-    pass
+    cf_negative_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens), 'domain_text': identified_domain})
+    cf_negative_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    cf_negative_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    # TODO: send feedback to user using tweepy
 
-def positiveSentimentHandler(tweet, tweet_text, tweet_tokens):
+def positiveSentimentHandler(tweet, tweet_tokens, identified_domain):
     # store tweets by current timestamp, domain & tweet_id
     # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
     # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
-    pass
+    cf_positive_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens), 'domain_text': identified_domain})
+    cf_positive_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    cf_positive_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    # TODO: send feedback to user using tweepy
 
 
-def unverifiedSentimentHandler(tweet, tweet_text, tweet_tokens):
+def unverifiedSentimentHandler(tweet, tweet_tokens, identified_domain):
     # store tweets by current timestamp, domain & tweet_id
     # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
     # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
-    pass
+    cf_unverified_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens), 'domain_text': identified_domain})
+    cf_unverified_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    cf_unverified_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    # TODO: send feedback to user using tweepy
 
 
 def extractTweetDomainInformation(tweet_tokens):
@@ -432,7 +463,7 @@ def analysisTweetReceiver(tweet, tweet_text, tweet_tokens):
     tweet_tokens = extractTweetDomainInformation(tweet_tokens=tweet_tokens)
     identified_domain = getTweetDomain(tweet_tokens=tweet_tokens)
     if identified_domain is None:
-        domainlessHandler(tweet=tweet, tweet_text=tweet_text, tweet_tokens=tweet_tokens)
+        domainlessHandler(tweet=tweet, tweet_tokens=tweet_tokens)
         return
     # update tweet tokens after domain identification
     tweet_tokens = extractTweetInfomationAfterDomainIdentification(tweet_tokens=tweet_tokens, identified_domain=identified_domain)
