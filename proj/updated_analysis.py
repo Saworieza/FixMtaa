@@ -4,10 +4,14 @@ from proj.celery import app
 
 import csv
 
-from cassandra.cluster import Cluster
-cluster = Cluster()  # use default args for now
+import pycassa
 
-session = cluster.connect('tweets')
+pool = pycassa.ConnectionPool('tweets')
+cf_domainless_tweets = pycassa.ColumnFamily(pool, 'domainless_tweets')
+
+# from cassandra.cluster import Cluster
+# cluster = Cluster()  # use default args for now
+# session = cluster.connect('tweets')
 
 domain_keywords_list = []
 domain_indicator_keywords_list = []
@@ -380,18 +384,33 @@ def getTweetProblem(tweet_tokens, identified_domain):
 
 
 def domainlessHandler(tweet, tweet_text, tweet_tokens):
-    # save to cassandra & return appropriate error message to the user
-    print 'RESULT: domainless : {0}'.format(tweet_text)
+    # TODO: save to cassandra & return appropriate error message to the user
+    # store tweets by current timestamp & tweet_id
+    # timestamp # || current_timestamp || tweet_id | tweet_text | tweet_tokens |
+    # tweet_id # || tweet_id || current_timestamp | tweet_text | tweet_tokens |
+    print 'RESULT: domainless : {0}'.format(tweet_text).encode('utf-8').strip()
     # print 'impelemt domainlessHandler handler function'
 
 def negativeSentimentHandler(tweet, tweet_text, tweet_tokens):
+    # store tweets by current timestamp, domain & tweet_id
+    # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
+    # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
+    # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     pass
 
 def positiveSentimentHandler(tweet, tweet_text, tweet_tokens):
+    # store tweets by current timestamp, domain & tweet_id
+    # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
+    # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
+    # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     pass
 
 
 def unverifiedSentimentHandler(tweet, tweet_text, tweet_tokens):
+    # store tweets by current timestamp, domain & tweet_id
+    # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
+    # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
+    # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     pass
 
 
