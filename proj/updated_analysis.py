@@ -418,9 +418,9 @@ def negativeSentimentHandler(tweet, tweet_tokens, identified_domain):
     # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
     # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
-    cf_negative_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens), 'domain_text': identified_domain})
-    cf_negative_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
-    cf_negative_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    cf_negative_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8"), 'domain_text': identified_domain})
+    cf_negative_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
+    cf_negative_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
 
 def positiveSentimentHandler(tweet, tweet_tokens, identified_domain):
@@ -428,9 +428,9 @@ def positiveSentimentHandler(tweet, tweet_tokens, identified_domain):
     # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
     # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
-    cf_positive_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens), 'domain_text': identified_domain})
-    cf_positive_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
-    cf_positive_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    cf_positive_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8"), 'domain_text': identified_domain})
+    cf_positive_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
+    cf_positive_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
 
 
@@ -439,9 +439,9 @@ def unverifiedSentimentHandler(tweet, tweet_tokens, identified_domain):
     # timestamp # || current_timestamp | tweet_id | tweet_text | tweet_tokens | domain_text |
     # domain # || domain_text || current_timestamp | tweet_id | tweet_text | tweet_tokens |
     # tweet_id # || tweet_id || current_timestamp | tweet_id | tweet_text | tweet_tokens |
-    cf_unverified_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens), 'domain_text': identified_domain})
-    cf_unverified_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
-    cf_unverified_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'], 'tweet_tokens': getTweetTokensAsString(tweet_tokens)})
+    cf_unverified_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8"), 'domain_text': identified_domain})
+    cf_unverified_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
+    cf_unverified_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
 
 
@@ -472,7 +472,7 @@ def analysisTweetReceiver(tweet, tweet_text, tweet_tokens):
     # negative_sentiment is a tuple with a boolean for sentiment state and whether the boolean value has been verified by the algorithm
     # this covers the case where we don't have a negative sentiment that has been determined by the algorithm
     negative_sentiment = getTweetProblem(tweet_tokens=tweet_tokens[0], identified_domain=identified_domain)
-    formated_result = 'RESULT: {0} : {1}'.format(tweet_text, str(negative_sentiment))
+    formated_result = 'RESULT: {0} : {1}'.format(tweet_text.encode("utf-8"), str(negative_sentiment))
     # print 'tweet:'
     # print tweet
     # print 'sentiment:'
