@@ -4,6 +4,11 @@ from proj.celery import app
 
 import csv
 
+from cassandra.cluster import Cluster
+cluster = Cluster()  # use default args for now
+
+session = cluster.connect('tweets')
+
 domain_keywords_list = []
 domain_indicator_keywords_list = []
 negation_keywords_list = []
@@ -60,6 +65,7 @@ def generateDomainNegationKeywords():
         # word | domain | can_prefix | can_suffix | is_independent
         domain_negation_keywords_list.append((row[0], row[1], row[2], row[3], row[4]))
 
+
 generateDomainKeywords()
 generateDomainIndicatorKeywords()
 generateNegationKeywords()
@@ -71,7 +77,7 @@ def findDomainNegationKeywords(tweet_tokens, identified_domain):
     specified_domain_negation_keywords = [text for text, domain, can_prefix, can_suffix, is_independent in domain_negation_keywords_list if domain == identified_domain]
     if not specified_domain_negation_keywords:
         # this means that this is an empty list
-        print "The domain doesn't have any negation keywords"
+        # print "The domain doesn't have any negation keywords"
         return (tweet_tokens, False)
     token_index = 0
     for text, classifier, domain in tweet_tokens:
@@ -85,7 +91,7 @@ def findDomainNegationKeywords(tweet_tokens, identified_domain):
     -> From the list of all domain keywords, filter them and remain with the
         one that point with the selected domain.
     """
-    print tweet_tokens
+    # print tweet_tokens
     return (tweet_tokens, True)  # True: The identified_domain passed as input is valid
 
 
@@ -101,7 +107,7 @@ def findNegationKeywords(tweet_tokens):
                 # negation_index = negation_data.index(text)
                 tweet_tokens[token_index] = (text, 'NK', 'u')
         token_index = token_index + 1
-    print tweet_tokens
+    # print tweet_tokens
     return tweet_tokens
 
 
@@ -119,7 +125,7 @@ def findDomainIndicatorKeywords(tweet_tokens):
         token_index = token_index + 1
     # token_texts = [text for text, classifier, domain in tweet_tokens if classifier == 'u']
     # for index, token in enumerate(token_texts):
-    print tweet_tokens
+    # print tweet_tokens
     return tweet_tokens
 
 
@@ -128,12 +134,12 @@ def findDomainKeywords(tweet_tokens):
     token_texts = [text for text, classifier, domain in tweet_tokens]
     domain_data = [value for value, domain in domain_keywords_list]
     for index, token in enumerate(token_texts):
-        print index
+        # print index
         if token in domain_data:
             # update tweet_tokens if domain keyword is present in tweet
             domain_index = domain_data.index(token)
             tweet_tokens[index] = (token, 'DK', domain_keywords_list[domain_index][1])
-    print tweet_tokens
+    # print tweet_tokens
     # findDomainIndicatorKeywords(tweet_tokens=tweet_tokens)
     return tweet_tokens
 
@@ -162,7 +168,7 @@ def getDomainByDomainIdentifiers(tweet_tokens):
                 domain_counter[domain] = 1
             else:
                 domain_counter[domain] = domain_counter[domain] + 1
-    print domain_counter
+    # print domain_counter
     if not domain_counter:
         # empty dictionary means that no domains matched
         return None
@@ -174,8 +180,8 @@ def getDomainByDomainIdentifiers(tweet_tokens):
         max_int_value = max(int_values)
         for key, val in domain_counter.items():
             if val == max_int_value:
-                print 'returning max DI'
-                print key
+                # print 'returning max DI'
+                # print key
                 return key
     return None  # don't see this happening
 
@@ -220,7 +226,7 @@ def isValidIndex(list_to_check, index_to_check):
 
 def getKeywordsAfterNK(tweet_tokens, domain_negators):
     token_index = 0
-    print tweet_tokens
+    # print tweet_tokens
     for text, classifier, domain in tweet_tokens:
         if classifier == 'NK':
             print 'found a negative keyword'
@@ -356,8 +362,9 @@ def getTweetProblem(tweet_tokens, identified_domain):
        that we have undeffited, we may have to switch to decision trees if using
        if-else statements becomes cumbersome and difficult to follow.
     """
-    print 'getting tweet problem'
-    print identified_domain
+    # TODO: Auto-correcting function for negative domain keywords list
+    # print 'getting tweet problem'
+    # print identified_domain
     # ->True [Negative sentiment found] ->False[Positive sentiment found/sentiment unconfirmed]
     negative_sentiment = (False, 'unverified')
     # get domain_negators for identified_domain
@@ -372,16 +379,19 @@ def getTweetProblem(tweet_tokens, identified_domain):
     return negative_sentiment
 
 
-def domainlessHandler(tweet, tweet_tokens):
+def domainlessHandler(tweet, tweet_text, tweet_tokens):
     # save to cassandra & return appropriate error message to the user
-    print 'implemt domainlessHandler handler function'
+    print 'RESULT: domainless : {0}'.format(tweet_text)
+    # print 'impelemt domainlessHandler handler function'
 
+def negativeSentimentHandler(tweet, tweet_text, tweet_tokens):
+    pass
 
-def positiveSentimentHandler(tweet, tweet_tokens):
+def positiveSentimentHandler(tweet, tweet_text, tweet_tokens):
     pass
 
 
-def unverifiedSentimentHandler(tweet, tweet_tokens):
+def unverifiedSentimentHandler(tweet, tweet_text, tweet_tokens):
     pass
 
 
@@ -394,7 +404,7 @@ def extractTweetInfomationAfterDomainIdentification(tweet_tokens, identified_dom
 
 
 @app.task
-def analysisTweetReceiver(tweet, tweet_tokens):
+def analysisTweetReceiver(tweet, tweet_text, tweet_tokens):
     """
     ->  This is the method that recieves the unmodifed tweets, together with
         the tweets cleaned tokens.
@@ -403,7 +413,7 @@ def analysisTweetReceiver(tweet, tweet_tokens):
     tweet_tokens = extractTweetDomainInformation(tweet_tokens=tweet_tokens)
     identified_domain = getTweetDomain(tweet_tokens=tweet_tokens)
     if identified_domain is None:
-        domainlessHandler(tweet=tweet, tweet_tokens=tweet_tokens)
+        domainlessHandler(tweet=tweet, tweet_text=tweet_text, tweet_tokens=tweet_tokens)
         return
     # update tweet tokens after domain identification
     tweet_tokens = extractTweetInfomationAfterDomainIdentification(tweet_tokens=tweet_tokens, identified_domain=identified_domain)
@@ -412,8 +422,12 @@ def analysisTweetReceiver(tweet, tweet_tokens):
     # negative_sentiment is a tuple with a boolean for sentiment state and whether the boolean value has been verified by the algorithm
     # this covers the case where we don't have a negative sentiment that has been determined by the algorithm
     negative_sentiment = getTweetProblem(tweet_tokens=tweet_tokens[0], identified_domain=identified_domain)
-    print 'showing negative sentiment:'
-    print negative_sentiment
+    formated_result = 'RESULT: {0} : {1}'.format(tweet_text, str(negative_sentiment))
+    # print 'tweet:'
+    # print tweet
+    # print 'sentiment:'
+    # print negative_sentiment
+    print formated_result
 
 
 # TODO: Switch to DataStax python driver for cassandra

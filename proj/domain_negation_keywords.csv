@@ -3,12 +3,17 @@ outage,electricity,no,yes,yes
 loss,electricity,no,yes,yes
 out,electricity,no,yes,no
 blackout,electricity,no,yes,yes
+black out,electricity,no,yes,yes
 blew,electricity,no,yes,no
 off,electricity,no,yes,no
 on off,electricity,no,no,no
+on of,electricty,no,no,no
 dim,electricity,yes,yes,no
 blown,electricity,yes,yes,no
 failure,electricity,no,yes,no
 cut,electricity,no,yes,no
 fluctuation,electricity,no,yes,yes
 fluctuations,electricity,no,yes,yes
+out,electricity,no,yes,no
+flickering,electricity,yes,yes,yes
+inconsistent,electricity,yes,yes,no
