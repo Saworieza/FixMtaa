@@ -1,6 +1,7 @@
 darkness,electricity,no,no,yes
 outage,electricity,no,yes,yes
 loss,electricity,yes,yes,yes
+lost,electricity,yes,yes,yes
 interruption,electricity,yes,yes,yes
 out,electricity,no,yes,no
 blackout,electricity,no,yes,yes
