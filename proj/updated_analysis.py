@@ -4,6 +4,21 @@ import csv
 import time
 
 import pycassa
+import tweepy
+
+import os
+
+# get auth credentials from environment variables
+CONSUMER_KEY = os.environ.get('TWITTER_API_KEY')
+CONSUMER_SECRET = os.environ.get('TWITTER_API_SECRET')
+ACCESS_TOKEN = os.environ.get('TWITTER_ACCESS_TOKEN')
+ACCESS_SECRET = os.environ.get('TWITTER_ACCESS_SECRET')
+
+# tweepy library credentials
+tweepy_auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+tweepy_auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
+
+api = tweepy.API(tweepy_auth)
 
 from proj.celery import app
 
@@ -82,6 +97,7 @@ def generateDomainNegationKeywords():
     reader = csv.reader(domain_negation_keywords)
     for row in reader:
         # word | domain | can_prefix | can_suffix | is_independent
+        print row[0]
         domain_negation_keywords_list.append((row[0], row[1], row[2], row[3], row[4]))
 
 
@@ -243,6 +259,8 @@ def isValidIndex(list_to_check, index_to_check):
         return False
 
 
+# TODO: If a domain identifier isn't changed to a 'DNK', it may be used as 'DK' when extracting the tweet sentiment
+
 def getKeywordsAfterNK(tweet_tokens, domain_negators):
     token_index = 0
     # print tweet_tokens
@@ -400,7 +418,9 @@ def getTweetProblem(tweet_tokens, identified_domain):
 def getTweetTokensAsString(tweet_tokens):
     token_string = ""
     for token in tweet_tokens:
-        token_string = token_string + token[0] + ", "  # TODO: store both token text & classifier
+        token_text = token[0]
+        token_classifier = token[1]
+        token_string = token_string +  token_text + " : " + token_classifier + ", "  # TODO: store both token text & classifier
     return token_string
 
 def domainlessHandler(tweet, tweet_tokens):
@@ -412,6 +432,7 @@ def domainlessHandler(tweet, tweet_tokens):
     cf_domainless_tweets_by_timestamp.insert(time.time(), {'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     cf_domainless_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
+    api.update_status("@{0} FixMtaa didn't understand your tweet, information you provided will help make it better.".format(tweet['user']['screen_name']), tweet['id_str'])
 
 def negativeSentimentHandler(tweet, tweet_tokens, identified_domain):
     # store tweets by current timestamp, domain & tweet_id
@@ -422,6 +443,7 @@ def negativeSentimentHandler(tweet, tweet_tokens, identified_domain):
     cf_negative_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     cf_negative_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
+    api.update_status("@{0} FixMtaa has forwarded your issue to the relevant authorities.".format(tweet['user']['screen_name']), tweet['id_str'])
 
 def positiveSentimentHandler(tweet, tweet_tokens, identified_domain):
     # store tweets by current timestamp, domain & tweet_id
@@ -432,6 +454,7 @@ def positiveSentimentHandler(tweet, tweet_tokens, identified_domain):
     cf_positive_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     cf_positive_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
+    api.update_status("@{0} FixMtaa understood your tweet, but couldn't detect a community problem.".format(tweet['user']['screen_name']), tweet['id_str'])
 
 
 def unverifiedSentimentHandler(tweet, tweet_tokens, identified_domain):
@@ -443,6 +466,7 @@ def unverifiedSentimentHandler(tweet, tweet_tokens, identified_domain):
     cf_unverified_tweets_by_domain.insert(identified_domain, {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     cf_unverified_tweets_by_tweet_id.insert(tweet['id_str'], {'current_timestamp': time.time(), 'tweet_id': tweet['id_str'], 'tweet_text': tweet['text'].encode("utf-8"), 'tweet_tokens': getTweetTokensAsString(tweet_tokens).encode("utf-8")})
     # TODO: send feedback to user using tweepy
+    api.update_status("@{0} FixMtaa understood you were asking about {1}, but couldn't detect your problem.".format(tweet['user']['screen_name']), tweet['id_str'])
 
 
 def extractTweetDomainInformation(tweet_tokens):
@@ -452,6 +476,7 @@ def extractTweetDomainInformation(tweet_tokens):
 def extractTweetInfomationAfterDomainIdentification(tweet_tokens, identified_domain):
     return findDomainNegationKeywords(findNegationKeywords(tweet_tokens=tweet_tokens), identified_domain=identified_domain)
 
+# TODO: Route internet service disruption to the service provider mentioned in the tweet
 
 @app.task
 def analysisTweetReceiver(tweet, tweet_text, tweet_tokens):
@@ -478,6 +503,19 @@ def analysisTweetReceiver(tweet, tweet_text, tweet_tokens):
     # print 'sentiment:'
     # print negative_sentiment
     print formated_result
+    if negative_sentiment[0] == True:
+        # we have positively identified a negative sentiment in the tweet_text
+        negativeSentimentHandler(tweet=tweet, tweet_tokens=tweet_tokens[0], identified_domain=identified_domain)
+        return
+    if negative_sentiment[0] == False and negative_sentiment[1] == 'verified':
+        # we we're able to extract domain information, but identified there's no problem in your tweet
+        positiveSentimentHandler(tweet=tweet, tweet_tokens=tweet_tokens[0], identified_domain=identified_domain)
+        return
+    if negative_sentiment[0] == False and negative_sentiment[1] == 'unverified':
+        # we we're able to extract the domain information, but could not figure out positive or negative sentiment
+        unverifiedSentimentHandler(tweet=tweet, tweet_tokens=tweet_tokens[0], identified_domain=identified_domain)
+        return
+    print 'We are never supposed to see this on the terminal screen'
 
 
 # TODO: Switch to DataStax python driver for cassandra

@@ -39,7 +39,7 @@ twitter_stream = TwitterStream(auth=oauth, block=False)
 # twitter_stream creates an iterator that we can use to read tweets from the stream
 
 try:
-    iterator = twitter_stream.statuses.filter(track="#empire")
+    iterator = twitter_stream.statuses.filter(track="fixmtaa")
 except URLError:
     print 'please check your network connection'
     sys.exit(0)

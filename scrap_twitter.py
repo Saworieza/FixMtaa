@@ -48,7 +48,7 @@ def getTweetsTweepy():
         else:
             print 'no statuses found'
     """
-    statuses = tweepy.Cursor(api.search, q='@KenyaPower_Care').items(1000)
+    statuses = tweepy.Cursor(api.search, q='@ZukuOfficial').items(1000)
     if statuses:
         for status in statuses:
             print 'status recieved'
@@ -59,7 +59,7 @@ def getTweetsTweepy():
 
 # give method the list of scrapped tweets
 def storeTweets(tweets):
-    with io.open('at_kenya_power_tweets.json', 'w', encoding='utf-8') as f:
+    with io.open('at_zuku_official_tweets.json', 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(tweets, ensure_ascii=False)))
 
 # we dont want to lose the list of tweets we have already scrapped in case the stream unexpectedly closes
